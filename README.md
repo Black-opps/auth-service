@@ -1,5 +1,6 @@
 # 🟦 Auth Service - Authentication & Authorization Microservice
 
+[![CI/CD Pipeline](https://github.com/Black-opps/auth-service/actions/workflows/ci.yml/badge.svg)](https://github.com/Black-opps/auth-service/actions/workflows/ci.yml)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104.0-009688.svg?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Python](https://img.shields.io/badge/Python-3.11-3776AB.svg?style=for-the-badge&logo=python)](https://www.python.org)
 [![JWT](https://img.shields.io/badge/JWT-Security-000000.svg?style=for-the-badge&logo=json-web-tokens)](https://jwt.io)

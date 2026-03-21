@@ -1,0 +1,54 @@
+# Create .gitignore
+@'
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Docker
+*.pid
+
+# JWT keys
+*.pem
+*.key
+'@ | Out-File -FilePath ".gitignore" -Encoding UTF8
+
+# Add and commit
+git add .gitignore
+git commit -m "Add .gitignore"
+git push
