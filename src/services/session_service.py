@@ -41,14 +41,14 @@ class SessionService:
         # Check existing sessions count
         active_sessions = self.db.query(UserSession).filter(
             UserSession.user_id == user_id,
-            UserSession.is_active == True
+            UserSession.is_active
         ).count()
         
         # If max sessions reached, remove oldest
         if active_sessions >= settings.MAX_SESSIONS_PER_USER:
             oldest = self.db.query(UserSession).filter(
                 UserSession.user_id == user_id,
-                UserSession.is_active == True
+                UserSession.is_active
             ).order_by(UserSession.last_activity_at.asc()).first()
             
             if oldest:
@@ -102,7 +102,7 @@ class SessionService:
         # Get from database
         session = self.db.query(UserSession).filter(
             UserSession.session_id == session_id,
-            UserSession.is_active == True
+            UserSession.is_active
         ).first()
         
         if session and not session.is_expired():
@@ -154,14 +154,14 @@ class SessionService:
         """Get all active sessions for a user."""
         return self.db.query(UserSession).filter(
             UserSession.user_id == user_id,
-            UserSession.is_active == True
+            UserSession.is_active
         ).order_by(UserSession.created_at.desc()).all()
     
     async def end_all_user_sessions(self, user_id: UUID, exclude_session: str = None):
         """End all sessions for a user."""
         query = self.db.query(UserSession).filter(
             UserSession.user_id == user_id,
-            UserSession.is_active == True
+            UserSession.is_active
         )
         
         if exclude_session:

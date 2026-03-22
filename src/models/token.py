@@ -1,7 +1,7 @@
 ﻿"""
 Token models for JWT and refresh tokens.
 """
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid

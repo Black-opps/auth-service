@@ -1,6 +1,8 @@
 """
 SSO (Single Sign-On) models for OAuth providers.
 """
+from enum import Enum
+from sqlalchemy import UniqueConstraint
 from sqlalchemy import Column, String, Boolean, DateTime, JSON, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -10,7 +12,7 @@ from datetime import datetime
 from ..core.database import Base
 
 
-class SSOProvider(str, enum.Enum):
+class SSOProvider(str, Enum):
     """Supported SSO providers."""
     GOOGLE = "google"
     MICROSOFT = "microsoft"

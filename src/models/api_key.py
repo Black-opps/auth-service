@@ -5,10 +5,9 @@ from sqlalchemy import Column, String, Boolean, DateTime, JSON, ForeignKey, Inte
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from ..core.database import Base
-from ..core.security import mask_sensitive_data
 
 
 class APIKey(Base):

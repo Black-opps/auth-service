@@ -1,10 +1,8 @@
 """
 Authentication schemas.
 """
-from pydantic import BaseModel, EmailStr, Field, validator
-from typing import Optional, List
-from uuid import UUID
-from datetime import datetime
+from pydantic import BaseModel, EmailStr, validator
+from typing import Optional
 import re
 
 

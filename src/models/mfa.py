@@ -1,6 +1,7 @@
 """
 MFA (Multi-Factor Authentication) models.
 """
+from sqlalchemy import Text
 from sqlalchemy import Column, String, Boolean, DateTime, JSON, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship

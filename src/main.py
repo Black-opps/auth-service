@@ -1,6 +1,8 @@
 """
 Auth Service - Main application entry point.
 """
+from .core.config import settings
+from .services.session_service import SessionService
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -11,12 +13,12 @@ import asyncio
 from prometheus_client import make_asgi_app, Counter, Histogram
 import sentry_sdk
 
-from .api import auth, tokens, keys, mfa, sessions, sso
-from .core.config import settings
-from .core.database import engine, Base
+# Import missing items used in this file
+from sqlalchemy.exc import SQLAlchemyError          # for specific DB errors
+from .core.database import engine, Base, SessionLocal, redis_client
 from .core.exceptions import AuthException
-from .middleware.rate_limit import RateLimitMiddleware
-from .services.session_service import SessionService
+from .api import auth, tokens, keys, mfa, sessions, sso  # the routers
+from .middleware.rate_limit import RateLimitMiddleware   # assuming this is where RateLimitMiddleware lives
 
 # Configure logging
 logging.basicConfig(
@@ -182,22 +184,20 @@ async def general_exception_handler(request: Request, exc: Exception):
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    from .core.database import redis_client
-    
     # Check database
     db_status = "healthy"
     try:
         db = SessionLocal()
         db.execute("SELECT 1")
         db.close()
-    except:
+    except SQLAlchemyError:
         db_status = "unhealthy"
     
     # Check Redis
     redis_status = "healthy"
     try:
         redis_client.ping()
-    except:
+    except Exception:  # or redis.RedisError if imported
         redis_status = "unhealthy"
     
     return {

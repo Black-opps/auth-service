@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, HTTPException, Depends
+﻿from fastapi import APIRouter
 from uuid import UUID
 
 router = APIRouter(prefix="/keys", tags=["api-keys"])

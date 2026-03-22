@@ -6,8 +6,7 @@ import secrets
 import string
 import hashlib
 import hmac
-from datetime import datetime, timedelta
-from typing import Optional, Tuple, List
+from typing import Tuple, List
 import logging
 
 from .config import settings

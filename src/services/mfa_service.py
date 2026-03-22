@@ -7,10 +7,9 @@ import qrcode
 import io
 import base64
 from datetime import datetime, timedelta
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 import logging
 import secrets
-import hashlib
 from uuid import UUID
 
 from ..core.config import settings

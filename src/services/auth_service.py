@@ -3,22 +3,18 @@ Authentication service.
 """
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
-from datetime import datetime, timedelta
-from typing import Optional, Tuple, Dict, Any
+from datetime import datetime
+from typing import Tuple, Dict, Any
 import logging
 from uuid import UUID
 
 from ..core.config import settings
-from ..core.security import (
-    verify_password, hash_password, generate_secure_token,
-    validate_password_strength
-)
 from ..core.exceptions import (
     AuthenticationError, UserNotFoundError, UserLockedError,
     MFARequiredError, InvalidTokenError
 )
-from ..models.user import User, UserStatus, UserRole
-from ..models.token import RefreshToken, RevokedToken
+from ..models.user import User, UserStatus
+from ..models.token import RefreshToken
 from ..models.session import UserSession
 from ..services.jwt_service import JWTService
 from ..services.mfa_service import MFAService
@@ -294,7 +290,7 @@ class AuthService:
             # Revoke all refresh tokens
             self.db.query(RefreshToken).filter(
                 RefreshToken.user_id == user_id,
-                RefreshToken.is_revoked == False
+                not RefreshToken.is_revoked
             ).update({
                 "is_revoked": True,
                 "revoked_at": datetime.utcnow(),

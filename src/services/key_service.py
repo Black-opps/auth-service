@@ -7,11 +7,9 @@ from typing import Optional, List
 import logging
 from uuid import UUID
 
-from ..core.config import settings
-from ..core.security import generate_api_key, verify_api_key, mask_sensitive_data
-from ..core.exceptions import APIKeyError, PermissionDeniedError
+from ..core.security import generate_api_key, mask_sensitive_data
+from ..core.exceptions import APIKeyError
 from ..models.api_key import APIKey
-from ..models.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +89,7 @@ class KeyService:
         # Find key
         api_key = self.db.query(APIKey).filter(
             APIKey.key_hash == key_hash,
-            APIKey.is_active == True
+            APIKey.is_active
         ).first()
         
         if not api_key:

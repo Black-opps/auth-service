@@ -3,7 +3,7 @@ Configuration management for auth service.
 """
 from pydantic_settings import BaseSettings
 from pydantic import Field
-from typing import Optional, List, Dict
+from typing import Optional, List
 from functools import lru_cache
 
 

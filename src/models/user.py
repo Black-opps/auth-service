@@ -1,11 +1,11 @@
 """
 User model for auth service.
 """
+from datetime import datetime, timedelta
 from sqlalchemy import Column, String, Boolean, DateTime, JSON, Enum, Integer, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
-from datetime import datetime
 import enum
 
 from ..core.database import Base
