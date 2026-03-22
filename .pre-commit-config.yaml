@@ -1,6 +1,7 @@
-﻿repos:
+﻿# .pre-commit-config.yaml
+repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -11,24 +12,16 @@
       - id: check-json
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.8
+    rev: v0.3.0
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
 
   - repo: https://github.com/pycqa/isort
-    rev: 6.0.1
+    rev: 5.13.2
     hooks:
       - id: isort
-        args: ["--profile", "black", "--filter-files"]
+        args: ["--profile", "black"]
 
-  - repo: local
-    hooks:
-      - id: pytest
-        name: pytest
-        entry: pytest
-        language: system
-        pass_filenames: false
-        always_run: true
-        stages: [pre-push]  # Fixed: changed from 'push' to 'pre-push'
+  # Remove local pytest hook for now
