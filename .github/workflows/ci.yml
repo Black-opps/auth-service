@@ -2,35 +2,41 @@
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
   lint:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install ruff isort
+      - name: Install dependencies
+        run: |
+          pip install ruff isort bandit mypy
 
-    - name: Run ruff linter
-      run: ruff check .
+      - name: Run Ruff
+        run: ruff check .
 
-    - name: Check formatting with ruff
-      run: ruff format --check .
+      - name: Check formatting
+        run: ruff format --check .
 
-    - name: Check import sorting
-      run: isort --check-only --profile black .
+      - name: Check imports
+        run: isort --check-only --profile black .
+
+      - name: Security scan
+        run: bandit -r src/
+
+      - name: Type checking
+        run: mypy src/
 
   test:
     runs-on: ubuntu-latest
@@ -50,6 +56,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+
       redis:
         image: redis:7-alpine
         ports:
@@ -61,33 +68,35 @@ jobs:
           --health-retries 5
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-cov pytest-asyncio
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio
 
-    - name: Run tests
-      env:
-        DATABASE_URL: postgresql://test:test@localhost:5432/auth_test
-        REDIS_URL: redis://localhost:6379
-        SECRET_KEY: test-secret-key
-        ALGORITHM: HS256
-      run: |
-        pytest --cov=src tests/ --cov-report=xml --cov-report=term
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/auth_test
+          REDIS_URL: redis://localhost:6379
+          SECRET_KEY: test-secret-key
+          ALGORITHM: HS256
+        run: |
+          pytest --cov=src tests/ \
+          --cov-report=xml \
+          --cov-report=term
 
-    - name: Upload coverage
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: false
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage.xml
+          fail_ci_if_error: false
 
   docker:
     runs-on: ubuntu-latest
@@ -95,24 +104,24 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        push: true
-        tags: |
-          ${{ secrets.DOCKER_USERNAME }}/auth-service:latest
-          ${{ secrets.DOCKER_USERNAME }}/auth-service:${{ github.sha }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Build & Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/auth-service:latest
+            ${{ secrets.DOCKER_USERNAME }}/auth-service:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
