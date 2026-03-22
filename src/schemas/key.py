@@ -1,14 +1,17 @@
 """
 API Key schemas.
 """
-from pydantic import BaseModel
-from typing import Optional, List
-from uuid import UUID
+
 from datetime import datetime
+from typing import List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel
 
 
 class APIKeyCreate(BaseModel):
     """API key creation request."""
+
     name: str
     permissions: List[str] = []
     ip_restrictions: List[str] = []
@@ -17,6 +20,7 @@ class APIKeyCreate(BaseModel):
 
 class APIKeyResponse(BaseModel):
     """API key response."""
+
     id: UUID
     name: str
     key_preview: str
@@ -27,18 +31,20 @@ class APIKeyResponse(BaseModel):
     last_used_at: Optional[datetime]
     usage_count: int
     created_at: datetime
-    
+
     class Config:
         orm_mode = True
 
 
 class APIKeyWithSecret(APIKeyResponse):
     """API key response with secret (only shown once)."""
+
     key: str
 
 
 class APIKeyUpdate(BaseModel):
     """API key update request."""
+
     name: Optional[str] = None
     permissions: Optional[List[str]] = None
     ip_restrictions: Optional[List[str]] = None
@@ -47,6 +53,7 @@ class APIKeyUpdate(BaseModel):
 
 class APIKeyRotateResponse(BaseModel):
     """API key rotation response."""
+
     id: UUID
     name: str
     new_key: str

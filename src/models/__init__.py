@@ -1,1 +1,1 @@
-﻿# Auth Service Models
+# Auth Service Models

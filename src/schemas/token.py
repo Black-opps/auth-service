@@ -1,14 +1,17 @@
 """
 Token schemas.
 """
-from pydantic import BaseModel
+
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
-from datetime import datetime
+
+from pydantic import BaseModel
 
 
 class TokenPayload(BaseModel):
     """JWT token payload."""
+
     sub: str  # User ID
     jti: str  # JWT ID
     type: str  # access, refresh
@@ -23,6 +26,7 @@ class TokenPayload(BaseModel):
 
 class TokenIntrospect(BaseModel):
     """Token introspection response."""
+
     active: bool
     sub: Optional[str] = None
     tenant_id: Optional[UUID] = None
@@ -34,5 +38,6 @@ class TokenIntrospect(BaseModel):
 
 class RevokedTokenResponse(BaseModel):
     """Revoked token response."""
+
     jti: str
     revoked_at: datetime

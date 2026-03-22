@@ -1,1 +1,1 @@
-﻿# Auth Services
+# Auth Services

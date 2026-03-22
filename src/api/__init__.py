@@ -1,1 +1,1 @@
-﻿# Auth Service API
+# Auth Service API

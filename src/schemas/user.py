@@ -1,11 +1,13 @@
 """
 User schemas.
 """
-from pydantic import BaseModel, EmailStr
-from typing import Optional, Dict, Any
-from uuid import UUID
+
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, EmailStr
 
 
 class UserRole(str, Enum):
@@ -54,7 +56,7 @@ class UserResponse(UserBase):
     created_at: datetime
     full_name: str
     preferences: Dict[str, Any]
-    
+
     class Config:
         orm_mode = True
 
@@ -69,6 +71,6 @@ class UserSessionResponse(BaseModel):
     created_at: datetime
     last_activity_at: datetime
     is_current: bool = False
-    
+
     class Config:
         orm_mode = True
