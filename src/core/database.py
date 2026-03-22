@@ -1,14 +1,18 @@
 """
 Database configuration and session management.
 """
-from sqlalchemy import create_engine, Index, UniqueConstraint
+
+import json
+import logging
+from contextlib import contextmanager
+from typing import Generator
+
+import redis as sync_redis                 # ← Moved to top here
+import redis.asyncio as redis
+
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
-from typing import Generator
-import redis.asyncio as redis
-import json
-from contextlib import contextmanager
-import logging
 
 from .config import settings
 
@@ -27,7 +31,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # Redis setup (synchronous for simple operations)
-import redis as sync_redis
 redis_client = sync_redis.Redis.from_url(
     settings.REDIS_URL,
     decode_responses=True,
