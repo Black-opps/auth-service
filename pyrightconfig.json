@@ -1,5 +1,8 @@
 {
   "include": ["src"],
+  "exclude": ["**/__pycache__", "**/.pytest_cache", "venv", ".git"],
   "venvPath": ".",
-  "venv": "venv"
+  "venv": "venv",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "warning"
 }

@@ -1,200 +1,59 @@
 """
-Session management service.
+Session Service - handles user session operations and cleanup
 """
 
 import logging
-from datetime import datetime, timedelta
-from typing import List, Optional
-from uuid import UUID
+from datetime import datetime
 
-from sqlalchemy.orm import Session
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..core.config import settings
-from ..core.database import AuthCache
-from ..core.security import generate_device_fingerprint, generate_session_id
-from ..models.session import UserSession
+from src.models.session import (  # Make sure you have a Session model in src/models/session.py
+    Session,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class SessionService:
-    """User session management service."""
+    """
+    Service for managing user sessions and cleanup of expired sessions.
+    """
 
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def create_session(
-        self, user_id: UUID, ip_address: str = None, user_agent: str = None
-    ) -> UserSession:
+    async def get_session(self, session_id: str):
         """
-        Create a new user session.
-
-        Args:
-            user_id: User ID
-            ip_address: Client IP
-            user_agent: Client user agent
-
-        Returns:
-            Created session
+        Retrieve a user session by ID.
         """
-        # Check existing sessions count
-        active_sessions = (
-            self.db.query(UserSession)
-            .filter(UserSession.user_id == user_id, UserSession.is_active)
-            .count()
-        )
+        result = await self.db.execute(select(Session).where(Session.id == session_id))
+        session_obj = result.scalar_one_or_none()
+        return session_obj
 
-        # If max sessions reached, remove oldest
-        if active_sessions >= settings.MAX_SESSIONS_PER_USER:
-            oldest = (
-                self.db.query(UserSession)
-                .filter(UserSession.user_id == user_id, UserSession.is_active)
-                .order_by(UserSession.last_activity_at.asc())
-                .first()
-            )
+    async def create_session(self, session_obj: Session):
+        """
+        Create a new session.
+        """
+        self.db.add(session_obj)
+        await self.db.commit()
+        await self.db.refresh(session_obj)
+        return session_obj
 
-            if oldest:
-                oldest.is_active = False
-                logger.info(f"Removed oldest session for user {user_id}")
-
-        # Create session
-        session_id = generate_session_id()
-        device_fingerprint = generate_device_fingerprint(
-            user_agent or "", ip_address or ""
-        )
-
-        session = UserSession(
-            user_id=user_id,
-            session_id=session_id,
-            device_fingerprint=device_fingerprint,
-            user_agent=user_agent,
-            ip_address=ip_address,
-            expires_at=datetime.utcnow()
-            + timedelta(seconds=settings.SESSION_TTL_SECONDS),
-        )
-
-        self.db.add(session)
-        self.db.flush()
-
-        # Cache session in Redis
-        AuthCache.set_user_session(
-            session_id,
-            {
-                "id": str(session.id),
-                "user_id": str(user_id),
-                "expires_at": session.expires_at.isoformat(),
-            },
-            ttl=settings.SESSION_TTL_SECONDS,
-        )
-
-        logger.info(f"Session created for user {user_id}: {session_id[:8]}...")
-
-        return session
-
-    async def get_session(self, session_id: str) -> Optional[UserSession]:
-        """Get session by ID."""
-        # Try cache first
-        cached = AuthCache.get_user_session(session_id)
-        if cached:
-            # Return session from cache
-            return (
-                self.db.query(UserSession)
-                .filter(UserSession.id == UUID(cached["id"]))
-                .first()
-            )
-
-        # Get from database
-        session = (
-            self.db.query(UserSession)
-            .filter(UserSession.session_id == session_id, UserSession.is_active)
-            .first()
-        )
-
-        if session and not session.is_expired():
-            # Update cache
-            AuthCache.set_user_session(
-                session_id,
-                {
-                    "id": str(session.id),
-                    "user_id": str(session.user_id),
-                    "expires_at": session.expires_at.isoformat(),
-                },
-                ttl=settings.SESSION_TTL_SECONDS,
-            )
-            return session
-
-        return None
-
-    async def update_session_activity(self, session_id: str):
-        """Update session last activity time."""
-        session = await self.get_session(session_id)
-        if session:
-            session.last_activity_at = datetime.utcnow()
-            self.db.commit()
-
-            # Update cache
-            AuthCache.set_user_session(
-                session_id,
-                {
-                    "id": str(session.id),
-                    "user_id": str(session.user_id),
-                    "expires_at": session.expires_at.isoformat(),
-                },
-                ttl=settings.SESSION_TTL_SECONDS,
-            )
-
-    async def end_session(self, session_id: str):
-        """End a session."""
-        session = await self.get_session(session_id)
-        if session:
-            session.is_active = False
-            self.db.commit()
-
-            # Remove from cache
-            AuthCache.delete_user_session(session_id)
-
-            logger.info(f"Session ended: {session_id[:8]}...")
-
-    async def get_user_sessions(self, user_id: UUID) -> List[UserSession]:
-        """Get all active sessions for a user."""
-        return (
-            self.db.query(UserSession)
-            .filter(UserSession.user_id == user_id, UserSession.is_active)
-            .order_by(UserSession.created_at.desc())
-            .all()
-        )
-
-    async def end_all_user_sessions(self, user_id: UUID, exclude_session: str = None):
-        """End all sessions for a user."""
-        query = self.db.query(UserSession).filter(
-            UserSession.user_id == user_id, UserSession.is_active
-        )
-
-        if exclude_session:
-            query = query.filter(UserSession.session_id != exclude_session)
-
-        sessions = query.all()
-
-        for session in sessions:
-            session.is_active = False
-            AuthCache.delete_user_session(session.session_id)
-
-        self.db.commit()
-
-        logger.info(f"Ended {len(sessions)} sessions for user {user_id}")
+    async def delete_session(self, session_id: str):
+        """
+        Delete a session by ID.
+        """
+        await self.db.execute(delete(Session).where(Session.id == session_id))
+        await self.db.commit()
 
     async def cleanup_expired_sessions(self):
-        """Clean up expired sessions."""
-        expired = (
-            self.db.query(UserSession)
-            .filter(UserSession.expires_at < datetime.utcnow())
-            .all()
-        )
-
-        for session in expired:
-            session.is_active = False
-            AuthCache.delete_user_session(session.session_id)
-
-        self.db.commit()
-
-        logger.info(f"Cleaned up {len(expired)} expired sessions")
+        """
+        Delete sessions that have expired.
+        """
+        now = datetime.utcnow()
+        result = await self.db.execute(delete(Session).where(Session.expires_at <= now))
+        deleted_count = result.rowcount
+        await self.db.commit()
+        logger.info(f"Cleaned up {deleted_count} expired sessions")
+        return deleted_count
