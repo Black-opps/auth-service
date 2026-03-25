@@ -19,12 +19,15 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: "pip"
 
-      - name: Install dependencies
+      - name: Install lint dependencies
         run: |
-          pip install ruff isort bandit mypy
+          pip install ruff isort bandit mypy pre-commit
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
 
       - name: Run Ruff
         run: ruff check .
@@ -76,7 +79,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: "pip"
 
       - name: Install dependencies
@@ -92,8 +95,8 @@ jobs:
           ALGORITHM: HS256
         run: |
           pytest --cov=src tests/ \
-          --cov-report=xml \
-          --cov-report=term
+            --cov-report=xml \
+            --cov-report=term
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
