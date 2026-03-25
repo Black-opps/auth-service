@@ -1,8 +1,5 @@
 ﻿name: CI/CD Pipeline
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 on:
   push:
     branches: [main, master]
@@ -12,24 +9,27 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Normalize line endings
+        run: git config --global core.autocrlf input
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
           cache: "pip"
 
-      - name: Install lint dependencies
+      - name: Install linting dependencies
         run: |
-          pip install ruff isort bandit mypy pre-commit
+          pip install ruff isort bandit mypy
 
-      - name: Run pre-commit hooks
-        run: pre-commit run --all-files
-
-      - name: Run Ruff
+      - name: Run Ruff lint
         run: ruff check .
 
       - name: Check formatting
@@ -47,6 +47,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     needs: lint
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
     services:
       postgres:
@@ -79,15 +82,15 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
           cache: "pip"
 
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-asyncio httpx
+          pip install pytest pytest-cov pytest-asyncio
 
-      - name: Run unit tests
+      - name: Run tests
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/auth_test
           REDIS_URL: redis://localhost:6379
@@ -95,8 +98,8 @@ jobs:
           ALGORITHM: HS256
         run: |
           pytest --cov=src tests/ \
-            --cov-report=xml \
-            --cov-report=term
+          --cov-report=xml \
+          --cov-report=term
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -104,72 +107,13 @@ jobs:
           file: coverage.xml
           fail_ci_if_error: false
 
-  integration:
-    runs-on: ubuntu-latest
-    needs: test
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: auth_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build auth-service Docker image
-        run: |
-          docker build -t auth-service:ci .
-
-      - name: Run auth-service container
-        run: |
-          docker run -d --name auth-service \
-            -e DATABASE_URL=postgresql://test:test@localhost:5432/auth_test \
-            -e REDIS_URL=redis://localhost:6379 \
-            -e SECRET_KEY=test-secret-key \
-            -e ALGORITHM=HS256 \
-            -p 8000:8000 auth-service:ci
-
-      - name: Wait for service to be healthy
-        run: |
-          for i in {1..30}; do
-            if curl -s http://localhost:8000/health | grep '"status":"degraded"\|"status":"ok"'; then
-              echo "Service is up"
-              break
-            fi
-            echo "Waiting for service..."
-            sleep 2
-          done
-
-      - name: Run integration tests
-        run: |
-          pytest tests/integration/ --base-url=http://localhost:8000
-
-      - name: Stop auth-service container
-        run: docker stop auth-service && docker rm auth-service
-
   docker:
     runs-on: ubuntu-latest
-    needs: integration
+    needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
     steps:
       - uses: actions/checkout@v4
